@@ -1,6 +1,5 @@
-export type TListener<T> = (arsg: T) => any;
+export type TListener<T extends object> = (arsg: T) => any;
 export type TEventReturn<T = any> = T;
-
 
 /**
  * Parent station
@@ -21,18 +20,18 @@ export class Station<
     protected state: TState = Object();
 
     /**
-     * Subcribe station by listener(s) 
+     * Subcribe station by listener(s)
      * @param args
      */
     public subscribe(
         args: Required<{
-            listeners: TListener<TState> | Array<
-                TListener<TState>
-            >;
+            listeners: TListener<TState> | Array<TListener<TState>>;
         }>
     ) {
         const { listeners } = args;
-        const convertedListeners = !Array.isArray(listeners) ? [listeners] : listeners;
+        const convertedListeners = !Array.isArray(listeners)
+            ? [listeners]
+            : listeners;
 
         try {
             for (let i = 0; i < convertedListeners.length; i++) {
@@ -40,7 +39,10 @@ export class Station<
                     continue;
                 }
 
-                this._listeners.set(convertedListeners[i], convertedListeners[i]);
+                this._listeners.set(
+                    convertedListeners[i],
+                    convertedListeners[i]
+                );
             }
         } catch (error) {
             console.error(error);
@@ -53,13 +55,13 @@ export class Station<
      */
     public unsubscribe(
         args: Required<{
-            listeners: TListener<TState> | Array<
-                TListener<TState>
-            >;
+            listeners: TListener<TState> | Array<TListener<TState>>;
         }>
     ) {
         const { listeners } = args;
-        const convertedListeners = !Array.isArray(listeners) ? [listeners] : listeners;
+        const convertedListeners = !Array.isArray(listeners)
+            ? [listeners]
+            : listeners;
 
         try {
             for (let i = 0; i < convertedListeners.length; i++) {
@@ -75,30 +77,46 @@ export class Station<
     }
 
     /**
-     * 
-     * @param args 
+     *
+     * @param args
      */
     public subscribeOnEvent<TEventName extends keyof TEvents>(
         args: Required<{
-            eventName: TEventName,
-            listeners: (args: TEvents[TEventName]) => any | Promise<any> | Array<(args: TEvents[TEventName]) => any | Promise<any>>
+            eventName: TEventName;
+            listeners: (
+                args: TEvents[TEventName]
+            ) =>
+                | any
+                | Promise<any>
+                | Array<(args: TEvents[TEventName]) => any | Promise<any>>;
         }>
     ) {
         const { eventName, listeners } = args;
-        const convertedListeners = !Array.isArray(listeners) ? [listeners] : listeners;
+        const convertedListeners = !Array.isArray(listeners)
+            ? [listeners]
+            : listeners;
 
         try {
             if (!this._eventListeners[eventName]) {
                 this._eventListeners[eventName] = new Map();
 
                 for (let i = 0; i < convertedListeners.length; i++) {
-                    this._eventListeners[eventName]?.set(convertedListeners[i], undefined);
+                    this._eventListeners[eventName]?.set(
+                        convertedListeners[i],
+                        undefined
+                    );
                 }
-            }
-            else {
+            } else {
                 for (let i = 0; i < convertedListeners.length; i++) {
-                    if (!this._eventListeners[eventName]?.has(convertedListeners[i])) {
-                        this._eventListeners[eventName]?.set(convertedListeners[i], undefined);
+                    if (
+                        !this._eventListeners[eventName]?.has(
+                            convertedListeners[i]
+                        )
+                    ) {
+                        this._eventListeners[eventName]?.set(
+                            convertedListeners[i],
+                            undefined
+                        );
                     }
                 }
             }
@@ -109,16 +127,23 @@ export class Station<
 
     /**
      * Subcribe on customize event
-     * @param args 
+     * @param args
      */
     public unsubscribeOnEvent<TEventName extends keyof TEvents>(
         args: Required<{
-            eventName: TEventName,
-            listeners: (args: TEvents[TEventName]) => any | Promise<any> | Array<(args: TEvents[TEventName]) => any | Promise<any>>
+            eventName: TEventName;
+            listeners: (
+                args: TEvents[TEventName]
+            ) =>
+                | any
+                | Promise<any>
+                | Array<(args: TEvents[TEventName]) => any | Promise<any>>;
         }>
     ) {
         const { eventName, listeners } = args;
-        const convertedListeners = !Array.isArray(listeners) ? [listeners] : listeners;
+        const convertedListeners = !Array.isArray(listeners)
+            ? [listeners]
+            : listeners;
 
         try {
             if (!this._eventListeners[eventName]) {
@@ -126,11 +151,13 @@ export class Station<
             }
 
             for (let i = 0; i < convertedListeners.length; i++) {
-                if (!this._eventListeners[eventName]?.has(convertedListeners[i])) {
+                if (
+                    !this._eventListeners[eventName]?.has(convertedListeners[i])
+                ) {
                     continue;
                 }
 
-                this._eventListeners[eventName]?.delete(convertedListeners[i])
+                this._eventListeners[eventName]?.delete(convertedListeners[i]);
             }
         } catch (error) {
             console.error(error);
@@ -141,10 +168,8 @@ export class Station<
      * Update state and emit new state changes to listening React component(s)
      * @param args
      */
-    protected setState(
-        args: TState
-    ) {
-        Object.assign(this.state, args);
+    protected setState(args: TState) {
+        this.state = { ...args };
 
         try {
             if (this._listeners.size < 1) {
@@ -158,16 +183,16 @@ export class Station<
                 keys.push(key);
             }
 
-            Promise.allSettled(keys.map(key => key(this.$state)));
+            Promise.allSettled(keys.map((key) => key(this.state)));
         } catch (error) {
             console.error(error);
         }
     }
 
     /**
-     * 
-     * @param args 
-     * @returns 
+     *
+     * @param args
+     * @returns
      */
     protected dispatch<TEventName extends keyof TEvents>(
         args: Required<{
@@ -176,9 +201,7 @@ export class Station<
         }>
     ) {
         try {
-            const {
-                eventName, data
-            } = args;
+            const { eventName, data } = args;
 
             const listeners = this._eventListeners[eventName];
 
@@ -193,17 +216,16 @@ export class Station<
                 keys.push(key);
             }
 
-            Promise.allSettled(keys.map(key => key(data)));
+            Promise.allSettled(keys.map((key) => key(data)));
         } catch (error) {
             console.error(error);
         }
     }
 
     /**
-     * State GETTER
+     * @deprecated
      */
     get $state() {
         return { ...this.state };
     }
-
 }

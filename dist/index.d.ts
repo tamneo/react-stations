@@ -1,4 +1,4 @@
-export type TListener<T> = (arsg: T) => any;
+export type TListener<T extends object> = (arsg: T) => any;
 export type TEventReturn<T = any> = T;
 /**
  * Parent station
@@ -54,7 +54,7 @@ export declare class Station<TState extends {}, TEvents extends {
         data: TEvents[TEventName];
     }>): void;
     /**
-     * State GETTER
+     * @deprecated
      */
     get $state(): TState;
 }
